@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qorus-core
+  labels:
+    app: qorus
+    qorus: core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qorus
+      qorus: core
+  template:
+    metadata:
+      labels:
+        app: qorus
+        qorus: core
+    spec:
+      containers:
+        - name: qorus-core
+          image: public.ecr.aws/qorus/qorus-ee:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: "16000m"
+              memory: 16Gi
+            requests:
+              cpu: "500m"
+              memory: 4Gi
+          env:
+            - name: QORUS_TZ
+              value: "Europe/Prague"
+            - name: QORUS_CORE_ONLY
+              value: "1"
+            - name: QORUS_DUMB_INIT
+              value: "0"
+          ports:
+            - containerPort: 8011
+          volumeMounts:
+            - name: qorus
+              mountPath: /opt/qorus/user
+              subPath: user
+            - name: qorus
+              mountPath: /opt/qorus/etc
+              subPath: etc
+            - name: qorus
+              mountPath: /opt/qorus/log
+              subPath: log
+            - name: qorus
+              mountPath: /opt/qorus/init
+              subPath: init
+      volumes:
+        - name: qorus
+          nfs:
+            server: 192.168.16.2
+            path: "/local/qorus-k8s"
+      imagePullSecrets:
+        - name: qorus-secret
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"

@@ -1,0 +1,76 @@
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: qorus
+  labels:
+    app: qorus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qorus
+  template:
+    metadata:
+      labels:
+        app: qorus
+    spec:
+      containers:
+        - name: qorus
+          image: public.ecr.aws/qorus/qorus-ee:latest
+          env:
+            - name: QORUS_NO_INIT
+              value: "1"
+          ports:
+            - containerPort: 8011
+          volumeMounts:
+            - name: qorus-user
+              mountPath: /opt/qorus/user
+            - name: qorus-etc
+              mountPath: /opt/qorus/etc
+            - name: qorus-log
+              mountPath: /opt/qorus/log
+            - name: qorus-init
+              mountPath: /opt/qorus/init
+      initContainers:
+        - name: qorus-init
+          image: public.ecr.aws/qorus/qorus-ee:latest
+            - name: OMQ_DB_NAME
+              value: postgres
+            - name: OMQ_DB_TYPE
+              value: pgsql
+            - name: OMQ_DB_HOST
+              value: qorus-postgres
+            - name: OMQ_DB_USER
+              value: postgres
+            - name: OMQ_DB_PASS
+              value: omq
+            - name: QORUS_INIT_ONLY
+              value: "1"
+            - name: TZ
+              value: "Europe/Prague"
+          volumeMounts:
+            - name: qorus-user
+              mountPath: /opt/qorus/user
+            - name: qorus-etc
+              mountPath: /opt/qorus/etc
+            - name: qorus-log
+              mountPath: /opt/qorus/log
+            - name: qorus-init
+              mountPath: /opt/qorus/init
+      volumes:
+        - name: qorus-user
+          nfs:
+            server: 192.168.16.2
+            path: "/Users/david/src/Qorus/kubernetes/user"
+        - name: qorus-etc
+          nfs:
+            server: 192.168.16.2
+            path: "/Users/david/src/Qorus/kubernetes/etc"
+        - name: qorus-log
+          nfs:
+            server: 192.168.16.2
+            path: "/Users/david/src/Qorus/kubernetes/log"
+        - name: qorus-init
+          nfs:
+            server: 192.168.16.2
+            path: "/Users/david/src/Qorus/kubernetes/init"

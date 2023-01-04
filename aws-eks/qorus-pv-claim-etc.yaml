@@ -1,0 +1,28 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: qorus-pv-etc
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 4Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/local/qorus-k8s/etc"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: qorus-pv-claim-etc
+  labels:
+    app: qorus
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi

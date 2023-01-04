@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: qorus
+  labels:
+    app: qorus
+    qorus: master
+spec:
+  serviceName: "qorus"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qorus
+      qorus: master
+  template:
+    metadata:
+      labels:
+        app: qorus
+        qorus: master
+    spec:
+      containers:
+        - name: qorus
+          image: public.ecr.aws/qorus/qorus-ee:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: "4000m"
+              memory: 16Gi
+            requests:
+              cpu: "100m"
+              memory: 200Mi
+          env:
+            - name: QORUS_TZ
+              value: "Europe/Prague"
+            - name: QORUS_NO_INIT
+              value: "1"
+            - name: QORUS_INDEPENDENT_MODE
+              value: "1"
+            - name: QORUS_DUMB_INIT
+              value: "0"
+          volumeMounts:
+            - name: qorus
+              mountPath: /opt/qorus/user
+              subPath: user
+            - name: qorus
+              mountPath: /opt/qorus/etc
+              subPath: etc
+            - name: qorus
+              mountPath: /opt/qorus/log
+              subPath: log
+            - name: qorus
+              mountPath: /opt/qorus/init
+              subPath: init
+      initContainers:
+        - name: qorus-init
+          image: public.ecr.aws/qorus/qorus-ee:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: 1Gi
+            requests:
+              cpu: "200m"
+              memory: 512Mi
+          env:
+            - name: QORUS_TZ
+              value: "Europe/Prague"
+            - name: OMQ_DB_NAME
+              value: postgres
+            - name: OMQ_DB_TYPE
+              value: pgsql
+            - name: OMQ_DB_HOST
+              value: qorus-postgres
+            - name: OMQ_DB_USER
+              value: postgres
+            - name: OMQ_DB_PASS
+              value: omq
+            - name: QORUS_INIT_ONLY
+              value: "1"
+          volumeMounts:
+            - name: qorus
+              mountPath: /opt/qorus/user
+              subPath: user
+            - name: qorus
+              mountPath: /opt/qorus/etc
+              subPath: etc
+            - name: qorus
+              mountPath: /opt/qorus/log
+              subPath: log
+            - name: qorus
+              mountPath: /opt/qorus/init
+              subPath: init
+      volumes:
+        - name: qorus
+          persistentVolumeClaim:
+            claimName: qorus-efs-claim
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+      imagePullSecrets:
+        - name: qorus-secret
